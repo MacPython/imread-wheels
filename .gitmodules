@@ -1,0 +1,6 @@
+[submodule "imread"]
+	path = imread
+	url = https://github.com/luispedro/imread
+[submodule "multibuild"]
+	path = multibuild
+	url = https://github.com/matthew-brett/multibuild

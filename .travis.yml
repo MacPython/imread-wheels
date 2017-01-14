@@ -1,0 +1,116 @@
+env:
+  global:
+      - REPO_DIR="imread"
+      - BUILD_COMMIT="release-0.6"
+      - PLAT=x86_64
+      - UNICODE_WIDTH=32
+      - NP_BUILD_DEP="numpy==1.7.1"
+      - NP_TEST_DEP="numpy==1.7.1"
+      - GEN_DEPS=""
+      - WHEELHOUSE_UPLOADER_USERNAME=travis-worker
+      # Following generated with
+      # travis encrypt -r MacPython/imread-wheels WHEELHOUSE_UPLOADER_SECRET=<the api key>
+      - secure: "c5HHvQ47BBIPC0gUPy7kGcnNgFqNAiWdw7pPfsZaJnB1j8LlZ+IS8MNQ0ER2JdD1tpIwe0ukUEIm92+epSevYu2ZfR21qtRinmymyjNiPRgTx34dEjpyj2cGwUujk8kkkUufWRq/bPXEggg7rrK1SqrFgqGk/FRMbwmiWLSPVXNgjPE6azq3VDornDQ0cZykmDy2aYYUri3YL9oE+yjrJOt4mdObLJfNyigS6qeXmgpddB5KLFqC9EdAyVxS9m/L/OBiNrUccNiTC70pKmzWyMHFsQTl1xyVCfMHWAn/gtHp7HxEOhrk7apK8qzVwaugudGpHCPGCZUJ8HlDQzxvI/lDptNsI4kK9DcSirCLw/OCcQXuV/OjzDqjDzhwCuaGWolyTsLdqFmwOgAkcyqKFFFNmqMI8l0/w9fxCvmKehiqIUf/epTgdplboiQ7Q/pboAIhdilFOXRVuXHLZVn/hJaqrQTaMcBWiqbqLs8sNqaVFpQ/Q4XWv1M734kQcTt25lh3Yg3AJRITVfQg0kr4V98YZPfqKD/QMCbUduupA3b4uSCJJ4eUb1pFv5zYjKzpSYJgQUCvUu8pf3IV3o3yilW7C5p9QWdbxImH+Ip4wWVQmnomM7y1fVwzf6SfX99bX2My8HrjZGUOcGCdYWTsLk9ztv65DDB8EUJEggmffgg="
+
+language: python
+# Default Python version is usually 2.7
+python: 3.5
+sudo: required
+dist: trusty
+services: docker
+
+matrix:
+  exclude:
+      # Exclude the default Python 3.5 build
+      - python: 3.5
+  include:
+    - os: linux
+      env:
+        - MB_PYTHON_VERSION=2.7
+    - os: linux
+      env:
+        - MB_PYTHON_VERSION=2.7
+        - UNICODE_WIDTH=16
+    - os: linux
+      env:
+        - MB_PYTHON_VERSION=2.7
+        - PLAT=i686
+    - os: linux
+      env:
+        - MB_PYTHON_VERSION=2.7
+        - PLAT=i686
+        - UNICODE_WIDTH=16
+    - os: linux
+      env:
+        - MB_PYTHON_VERSION=3.4
+        - NP_TEST_DEP=numpy==1.8.1
+    - os: linux
+      env:
+        - MB_PYTHON_VERSION=3.4
+        - NP_TEST_DEP=numpy==1.8.1
+        - PLAT=i686
+    - os: linux
+      env:
+        - MB_PYTHON_VERSION=3.5
+        - NP_BUILD_DEP=numpy==1.9.3
+        - NP_TEST_DEP=numpy==1.9.3
+    - os: linux
+      env:
+        - MB_PYTHON_VERSION=3.5
+        - PLAT=i686
+        - NP_BUILD_DEP=numpy==1.9.3
+        - NP_TEST_DEP=numpy==1.9.3
+    - os: linux
+      env:
+        - MB_PYTHON_VERSION=3.6
+        - NP_BUILD_DEP=numpy==1.11.3
+        - NP_TEST_DEP=numpy==1.11.3
+    - os: linux
+      env:
+        - MB_PYTHON_VERSION=3.6
+        - PLAT=i686
+        - NP_BUILD_DEP=numpy==1.11.3
+        - NP_TEST_DEP=numpy==1.11.3
+    - os: osx
+      language: generic
+      env: MB_PYTHON_VERSION=2.7
+    - os: osx
+      language: generic
+      env:
+        - MB_PYTHON_VERSION=3.4
+        - NP_TEST_DEP=numpy==1.8.1
+    - os: osx
+      language: generic
+      env:
+        - MB_PYTHON_VERSION=3.5
+        - NP_BUILD_DEP=numpy==1.9.3
+        - NP_TEST_DEP=numpy==1.9.3
+    - os: osx
+      language: generic
+      env:
+        - MB_PYTHON_VERSION=3.6
+        - NP_BUILD_DEP=numpy==1.11.3
+        - NP_TEST_DEP=numpy==1.11.3
+
+before_install:
+    - BUILD_DEPENDS="$NP_BUILD_DEP Cython"
+    - TEST_DEPENDS="$NP_TEST_DEP nose $GEN_DEPS"
+    - source multibuild/common_utils.sh
+    - source multibuild/travis_steps.sh
+    - before_install
+
+install:
+    # Maybe get and clean and patch source
+    - clean_code $REPO_DIR $BUILD_COMMIT
+    - build_wheel $REPO_DIR $PLAT
+
+script:
+    - install_run $PLAT
+
+after_success:
+    # Upload wheels to Rackspace container
+    - pip install wheelhouse-uploader
+    - python -m wheelhouse_uploader upload --local-folder
+          ${TRAVIS_BUILD_DIR}/wheelhouse/
+          --no-update-index
+          wheels
